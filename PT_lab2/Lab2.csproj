@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+      <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Images\EN.png" />
+    <None Remove="Images\FileImage.png" />
+    <None Remove="Images\FolderClose.png" />
+    <None Remove="Images\PictureImage.png" />
+    <None Remove="Images\PL.png" />
+    <None Remove="Images\txtImage.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Images\EN.png" />
+    <Resource Include="Images\FileImage.png" />
+    <Resource Include="Images\FolderClose.png" />
+    <Resource Include="Images\PictureImage.png" />
+    <Resource Include="Images\PL.png" />
+    <Resource Include="Images\TxtImage.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Strings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Strings.pl.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Strings.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
