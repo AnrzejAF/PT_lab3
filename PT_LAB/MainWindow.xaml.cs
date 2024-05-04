@@ -3,14 +3,14 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using IOPath = System.IO.Path;
 using System.IO;
-using static Lab2.FileInfoViewModel;
+using static PT_LAB.FileInfoViewModel;
 using System.Globalization;
 using System.Windows.Data;
-using static Lab2.MainWindow;
+using static PT_LAB.MainWindow;
 using System.ComponentModel;
 
 
-namespace Lab2
+namespace PT_LAB
 {
   
     public partial class MainWindow : Window

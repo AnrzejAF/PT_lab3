@@ -9,7 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Shapes;
 
-namespace Lab2
+namespace PT_LAB
 {
     public class DirectoryInfoViewModel : FileSystemInfoViewModel
     {
