@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
 
-namespace Lab2
+namespace PT_LAB
 {
     public class FileInfoViewModel : FileSystemInfoViewModel
     {

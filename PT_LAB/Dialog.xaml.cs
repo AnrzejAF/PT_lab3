@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Windows;
 
-namespace Lab2
+namespace PT_LAB
 {
     /// <summary>
     /// Interaction logic for CreateDialog.xaml
