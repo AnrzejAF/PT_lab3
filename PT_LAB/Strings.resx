@@ -123,4 +123,10 @@
   <data name="Open_Directory" xml:space="preserve">
     <value>Open directory</value>
   </data>
+  <data name="Exit" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Select directory to open</value>
+  </data>
 </root>

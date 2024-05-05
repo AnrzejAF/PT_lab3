@@ -1,4 +1,4 @@
-﻿    <Window x:Class="PT_LAB.MainWindow"
+﻿<Window x:Class="PT_LAB.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -7,8 +7,6 @@
         Title="MainWindow" Height="450" Width="700">
 
     <Window.Resources>
-        
-        
         <HierarchicalDataTemplate DataType="{x:Type local:DirectoryInfoViewModel}" ItemsSource="{Binding Items}">
             <StackPanel Orientation="Horizontal">
                 <Image Width="16" Source="/Images/FolderClose.png" />
@@ -35,52 +33,33 @@
             </Style.Triggers>
         </Style>
         <local:LangBoolConverter x:Key="LangBoolConverter"/>
-        
-        
     </Window.Resources>
-    
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
 
-        <DockPanel LastChildFill="False" Grid.Row="0" >
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <ToolBar Grid.Column="0" DockPanel.Dock="Top" Height="32" Width="627">
-                    <Menu>
-                        <MenuItem Header="{Binding Source={StaticResource Strings}, Path=File}">
-                            <MenuItem Header="{Binding Source={StaticResource Strings}, Path=Open_Directory}" Click="Open_Click"/>
-                            <MenuItem Header="Exit" Click="Exit_Click"/>
-                        </MenuItem>
-                    </Menu>
-                </ToolBar>
-                <ToggleButton Grid.Column ="1" x:Name="PolishLangugageButton"  Style="{StaticResource LangButtonStyle}"
+        <DockPanel LastChildFill="False" Grid.Row="0" Width="700" >
+            <ToolBar DockPanel.Dock="Left" >
+                <Menu>
+                    <MenuItem Header="{Binding Source={StaticResource Strings}, Path=File}">
+                        <MenuItem Header="{Binding Source={StaticResource Strings}, Path=Open_Directory}"  Command="{Binding OpenRootFolderCommand}" />
+                        <MenuItem Header="{Binding Source={StaticResource Strings}, Path=Exit}" Click="Exit_Click"/>
+                    </MenuItem>
+                </Menu>
+            </ToolBar>
+            <ToggleButton DockPanel.Dock="Right" x:Name="PolishLangugageButton"  Style="{StaticResource LangButtonStyle}"
                           IsChecked="{Binding Lang, Converter={StaticResource LangBoolConverter}, ConverterParameter=pl}">
-                    <Image Source="/Images/PL.png" Width="32" />
-                </ToggleButton>
-                <ToggleButton Grid.Column ="2" x:Name="EnglishLangugageButton" Style="{StaticResource LangButtonStyle}"
+                <Image Source="/Images/PL.png" Width="32" />
+            </ToggleButton>
+            <ToggleButton DockPanel.Dock="Right"  x:Name="EnglishLangugageButton" Style="{StaticResource LangButtonStyle}"
                           IsChecked="{Binding Lang, Converter={StaticResource LangBoolConverter}, ConverterParameter=en}">
-                    <Image Source="/Images/EN.png" Width="32" />
-                </ToggleButton>
-            </Grid>
+                <Image Source="/Images/EN.png" Width="32" />
+            </ToggleButton>
         </DockPanel>
-        
-        
         <TreeView x:Name="FoldersTreeView" Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Root.Items}" />
 
     </Grid>
