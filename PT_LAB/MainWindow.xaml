@@ -42,12 +42,14 @@
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
 
-        <DockPanel LastChildFill="False" Grid.Row="0" Width="700" >
+        <DockPanel LastChildFill="False" Grid.Row="0" Width="680" >
             <ToolBar DockPanel.Dock="Left" >
                 <Menu>
                     <MenuItem Header="{Binding Source={StaticResource Strings}, Path=File}">
                         <MenuItem Header="{Binding Source={StaticResource Strings}, Path=Open_Directory}"  Command="{Binding OpenRootFolderCommand}" />
                         <MenuItem Header="{Binding Source={StaticResource Strings}, Path=Exit}" Click="Exit_Click"/>
+                        <MenuItem Header="Sort Root Folder" Command="{Binding SortRootFolderCommand}" />
+
                     </MenuItem>
                 </Menu>
             </ToolBar>

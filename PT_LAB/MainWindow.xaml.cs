@@ -31,25 +31,18 @@ namespace PT_LAB
             this.Close();
         }
 
-        //private void Open_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var dlg = new FolderBrowserDialog();
-        //    if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-        //    {
-        //        var path = dlg.SelectedPath;
-        //        _fileExplorer.OpenRoot(path);
-        //        DataContext = _fileExplorer;
-        //    }
-        //}
-
         public class FileExplorer : ViewModelBase
         {
             public FileExplorer()
             {
                 NotifyPropertyChanged(nameof(Lang));
                 OpenRootFolderCommand = new RelayCommand(OpenRootFolderExecute);
+                SortRootFolderCommand = new RelayCommand(SortRootFolderExecute, CanSortRootFolderExecute);
             }
+
             public DirectoryInfoViewModel? Root { get; set; }
+            public RelayCommand OpenRootFolderCommand { get; private set; }
+            public RelayCommand SortRootFolderCommand { get; private set; }
 
             public void OpenRoot(string path)
             {
@@ -73,7 +66,6 @@ namespace PT_LAB
                 }
             }
 
-            public RelayCommand OpenRootFolderCommand { get; private set; }
 
             private void OpenRootFolderExecute(object parameter)
             {
@@ -83,6 +75,20 @@ namespace PT_LAB
                 {
                     var path = dlg.SelectedPath;
                     OpenRoot(path);
+                    NotifyPropertyChanged(nameof(Root));
+                }
+            }
+
+            private bool CanSortRootFolderExecute(object parameter)
+            {
+                return Root != null;            }
+
+            private void SortRootFolderExecute(object parameter)
+            {
+                SortDialog dlg = new SortDialog();
+                if (dlg.ShowDialog() == true)
+                {
+                    //Root.Sort(dlg.SelectedOptions);
                     NotifyPropertyChanged(nameof(Root));
                 }
             }
