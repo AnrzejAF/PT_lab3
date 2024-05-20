@@ -129,4 +129,34 @@
   <data name="Description" xml:space="preserve">
     <value>Wybierz ścieżkę do otwarcia</value>
   </data>
+  <data name="SortOptions" xml:space="preserve">
+    <value>Opcje sortowania</value>
+  </data>
+  <data name="Alphabetical" xml:space="preserve">
+    <value>Alfabetycznie</value>
+  </data>
+  <data name="BySize" xml:space="preserve">
+    <value>Wielkość</value>
+  </data>
+  <data name="ByDate" xml:space="preserve">
+    <value>Data</value>
+  </data>
+  <data name="ByExtension" xml:space="preserve">
+    <value>Rozszerzenie</value>
+  </data>
+  <data name="Ascending" xml:space="preserve">
+    <value>Rosnąco</value>
+  </data>
+  <data name="Descending" xml:space="preserve">
+    <value>Malejąco</value>
+  </data>
+  <data name="SortMode" xml:space="preserve">
+    <value>Sposób sortowania</value>
+  </data>
+  <data name="SortOrder" xml:space="preserve">
+    <value>Kolejność sortowania</value>
+  </data>
+  <data name="Sort" xml:space="preserve">
+    <value>Sortuj</value>
+  </data>
 </root>

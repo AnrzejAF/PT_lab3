@@ -66,6 +66,7 @@ namespace PT_LAB
         {
             App.Current.Dispatcher.Invoke(() => OnFileSystemChanged(e));
         }
+        
         private void OnFileSystemChanged(FileSystemEventArgs e)
         {
             switch (e.ChangeType)
@@ -141,8 +142,25 @@ namespace PT_LAB
             }
         }
 
+        public List<DirectoryInfoViewModel> ? SubDirectories { get; set; }
+
+        public void Sort()
+        {
+            if (SubDirectories == null)
+            {
+                return;
+            }
+            SubDirectories = SubDirectories.OrderBy(d => d.Name).ToList();
+            foreach (var subDir in SubDirectories)
+            {
+                subDir.Sort();
+            }
+        }
 
         public Exception Exception { get; private set; }
+
+        public string Name { get; private set; } = string.Empty;
+
         private FileSystemWatcher Watcher;
     }
 

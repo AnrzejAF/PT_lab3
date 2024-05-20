@@ -61,6 +61,60 @@ namespace PT_LAB {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Alphabetical.
+        /// </summary>
+        public static string Alphabetical {
+            get {
+                return ResourceManager.GetString("Alphabetical", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ascending.
+        /// </summary>
+        public static string Ascending {
+            get {
+                return ResourceManager.GetString("Ascending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Date.
+        /// </summary>
+        public static string ByDate {
+            get {
+                return ResourceManager.GetString("ByDate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Extension.
+        /// </summary>
+        public static string ByExtension {
+            get {
+                return ResourceManager.GetString("ByExtension", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Size.
+        /// </summary>
+        public static string BySize {
+            get {
+                return ResourceManager.GetString("BySize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Descending.
+        /// </summary>
+        public static string Descending {
+            get {
+                return ResourceManager.GetString("Descending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Select directory to open.
         /// </summary>
         public static string Description {
@@ -93,6 +147,42 @@ namespace PT_LAB {
         public static string Open_Directory {
             get {
                 return ResourceManager.GetString("Open_Directory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sort.
+        /// </summary>
+        public static string Sort {
+            get {
+                return ResourceManager.GetString("Sort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sort mode.
+        /// </summary>
+        public static string SortMode {
+            get {
+                return ResourceManager.GetString("SortMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sort options.
+        /// </summary>
+        public static string SortOptions {
+            get {
+                return ResourceManager.GetString("SortOptions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sort order.
+        /// </summary>
+        public static string SortOrder {
+            get {
+                return ResourceManager.GetString("SortOrder", resourceCulture);
             }
         }
     }
