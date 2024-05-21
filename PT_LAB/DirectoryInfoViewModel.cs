@@ -14,20 +14,11 @@ namespace PT_LAB
 {
     public class DirectoryInfoViewModel : FileSystemInfoViewModel
     {
-        public ObservableCollection<FileSystemInfoViewModel> Items { get; private set; }
-         = new ObservableCollection<FileSystemInfoViewModel>();
-        public DirectoryInfo DirectoryInfo => (DirectoryInfo)Model;
-
-        public string Extension => string.Empty; // Katalogi nie mają rozszerzeń
-
-        public long Size => Items.Count; // Możesz też implementować rekurencyjne zliczanie elementów
-
+        public ObservableCollection<FileSystemInfoViewModel> Items { get; private set; } = new ObservableCollection<FileSystemInfoViewModel>();
+        private FileSystemWatcher Watcher;
         private SortOptions _sortOptions;
 
-
-        public DateTime Date => DirectoryInfo.LastWriteTime;
-
-        public bool Open(string path)
+        public bool Open(string path, SortOptions sortOptions = null)
         {
             bool result = false;
 
@@ -49,7 +40,7 @@ namespace PT_LAB
                     itemViewModel.Model = dirInfo;
                     Items.Add(itemViewModel);
 
-                    itemViewModel.Open(dirName);
+                    itemViewModel.Open(dirName, sortOptions);
                 }
 
                 foreach (var fileName in Directory.GetFiles(path))
@@ -59,12 +50,20 @@ namespace PT_LAB
                     itemViewModel.Model = fileInfo;
                     Items.Add(itemViewModel);
                 }
+
+                if (sortOptions != null)
+                {
+                    _sortOptions = sortOptions;
+                    Sort(_sortOptions);
+                }
+
                 result = true;
             }
             catch (Exception ex)
             {
                 Exception = ex;
             }
+
             return result;
         }
 
@@ -83,83 +82,64 @@ namespace PT_LAB
             switch (e.ChangeType)
             {
                 case WatcherChangeTypes.Created:
-                    if (e is FileSystemEventArgs fileEvent && File.Exists(fileEvent.FullPath))
+                    if (File.Exists(e.FullPath))
                     {
-                        var fileInfo = new FileInfo(fileEvent.FullPath);
-                        FileInfoViewModel itemViewModel = new FileInfoViewModel();
-                        itemViewModel.Model = fileInfo;
+                        var fileInfo = new FileInfo(e.FullPath);
+                        FileInfoViewModel itemViewModel = new FileInfoViewModel { Model = fileInfo };
                         Items.Add(itemViewModel);
                     }
-                    else if (e is FileSystemEventArgs directoryEvent && Directory.Exists(directoryEvent.FullPath))
+                    else if (Directory.Exists(e.FullPath))
                     {
-                        var dirInfo = new DirectoryInfo(directoryEvent.FullPath);
-                        DirectoryInfoViewModel itemViewModel = new DirectoryInfoViewModel();
-                        itemViewModel.Model = dirInfo;
+                        var dirInfo = new DirectoryInfo(e.FullPath);
+                        DirectoryInfoViewModel itemViewModel = new DirectoryInfoViewModel { Model = dirInfo };
                         Items.Add(itemViewModel);
-                        itemViewModel.Open(directoryEvent.FullPath);
+                        itemViewModel.Open(e.FullPath, _sortOptions);
                     }
                     break;
                 case WatcherChangeTypes.Deleted:
-                    string deletedPath = e.FullPath;
-                    FileSystemInfoViewModel deletedItem = Items.FirstOrDefault(item => item.Model.FullName == deletedPath);
+                    var deletedItem = Items.FirstOrDefault(item => item.Model.FullName == e.FullPath);
                     if (deletedItem != null)
                     {
                         Items.Remove(deletedItem);
                     }
                     break;
                 case WatcherChangeTypes.Changed:
-                    string changedPath = e.FullPath;
-                    FileSystemInfoViewModel changedItem = Items.FirstOrDefault(item => item.Model.FullName == changedPath);
-                    if (changedItem != null)
-                    {
-                        if (changedItem is FileInfoViewModel fileViewModel)
-                        {
-                            var fileInfo = new FileInfo(changedPath);
-                            fileViewModel.Model = fileInfo;
-                        }
-                        else if (changedItem is DirectoryInfoViewModel dirViewModel)
-                        {
-                            var dirInfo = new DirectoryInfo(changedPath);
-                            dirViewModel.Model = dirInfo;
-                        }
-                    }
+                    // Optional: Handle changes if needed
                     break;
                 case WatcherChangeTypes.Renamed:
-                    string oldPath = (e as RenamedEventArgs).OldFullPath;
-                    string newPath = e.FullPath;
-
-
-                    FileSystemInfoViewModel renamedItem = Items.FirstOrDefault(item => item.Model.FullName == oldPath);
-                    if (renamedItem != null)
+                    var renamedEventArgs = e as RenamedEventArgs;
+                    if (renamedEventArgs != null)
                     {
-                        if (renamedItem is FileInfoViewModel fileViewModel)
+                        var oldItem = Items.FirstOrDefault(item => item.Model.FullName == renamedEventArgs.OldFullPath);
+                        if (oldItem != null)
                         {
-                            var fileInfo = new FileInfo(newPath);
-                            FileInfoViewModel itemViewModel = new FileInfoViewModel();
-                            itemViewModel.Model = fileInfo;
+                            Items.Remove(oldItem);
+                        }
+
+                        if (File.Exists(renamedEventArgs.FullPath))
+                        {
+                            var fileInfo = new FileInfo(renamedEventArgs.FullPath);
+                            FileInfoViewModel itemViewModel = new FileInfoViewModel { Model = fileInfo };
                             Items.Add(itemViewModel);
                         }
-                        else if (renamedItem is DirectoryInfoViewModel dirViewModel)
+                        else if (Directory.Exists(renamedEventArgs.FullPath))
                         {
-                            var dirInfo = new DirectoryInfo(newPath);
-                            DirectoryInfoViewModel itemViewModel = new DirectoryInfoViewModel();
-                            itemViewModel.Model = dirInfo;
+                            var dirInfo = new DirectoryInfo(renamedEventArgs.FullPath);
+                            DirectoryInfoViewModel itemViewModel = new DirectoryInfoViewModel { Model = dirInfo };
                             Items.Add(itemViewModel);
-                            itemViewModel.Open(newPath);
+                            itemViewModel.Open(renamedEventArgs.FullPath, _sortOptions);
                         }
-                        Items.Remove(renamedItem);
                     }
                     break;
             }
-            // sort Root
+
             Sort(_sortOptions);
         }
-
-        public List<DirectoryInfoViewModel>? SubDirectories { get; set; }
 
         public void Sort(SortOptions options)
         {
             _sortOptions = options;
+
             // Oddzielnie sortuj katalogi i pliki
             var directories = Items.OfType<DirectoryInfoViewModel>().ToList();
             var files = Items.OfType<FileInfoViewModel>().ToList();
@@ -183,13 +163,13 @@ namespace PT_LAB
             {
                 Items.Add(file);
             }
+
+            //// Wyświetlenie wyników sortowania w oknie dialogowym
+            //string log = string.Join(Environment.NewLine, comparer.ComparisonLog);
+            //MessageBox.Show(log, "Sort Results", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         public Exception Exception { get; private set; }
 
-        public string Name { get; private set; } = string.Empty;
-
-        private FileSystemWatcher Watcher;
     }
-
 }

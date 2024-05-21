@@ -3,7 +3,6 @@ using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Data;
-//using static PT_LAB.Sorting/*;*/
 
 namespace PT_LAB
 {
