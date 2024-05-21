@@ -1,4 +1,4 @@
-﻿using System.DirectoryServices;
+﻿ using System.DirectoryServices;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -19,8 +19,8 @@ namespace PT_LAB
             InitializeComponent();
             SortOptions = new SortOptions();
             this.DataContext = SortOptions;
-
         }
+
         private void SortButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = true;
