@@ -7,7 +7,6 @@ namespace PT_LAB
 {
     public partial class MainWindow : Window
     {
-
         // Private fields
         private FileExplorer _fileExplorer;
 
@@ -29,69 +28,6 @@ namespace PT_LAB
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
-        }
-
-        public class FileExplorer : ViewModelBase
-        {
-            public FileExplorer()
-            {
-                NotifyPropertyChanged(nameof(Lang));
-                OpenRootFolderCommand = new RelayCommand(OpenRootFolderExecute);
-                SortRootFolderCommand = new RelayCommand(SortRootFolderExecute, CanSortRootFolderExecute);
-            }
-
-            public DirectoryInfoViewModel? Root { get; set; }
-            public RelayCommand OpenRootFolderCommand { get; private set; }
-            public RelayCommand SortRootFolderCommand { get; private set; }
-
-            public void OpenRoot(string path)
-            {
-                Root = new DirectoryInfoViewModel();
-                Root.Open(path);
-            }
-
-            public string Lang
-            {
-                get { return CultureInfo.CurrentUICulture.TwoLetterISOLanguageName; }
-                set
-                {
-                    if (value != null)
-                    {
-                        if (CultureInfo.CurrentUICulture.TwoLetterISOLanguageName != value)
-                        {
-                            CultureInfo.CurrentUICulture = new CultureInfo(value);
-                            NotifyPropertyChanged();
-                        }
-                    }
-                }
-            }
-
-
-            private void OpenRootFolderExecute(object parameter)
-            {
-                var description = Strings.Description;
-                var dlg = new System.Windows.Forms.FolderBrowserDialog() { Description = description };
-                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                {
-                    var path = dlg.SelectedPath;
-                    OpenRoot(path);
-                    NotifyPropertyChanged(nameof(Root));
-                }
-            }
-
-            private bool CanSortRootFolderExecute(object parameter)
-            {
-                return Root != null;            }
-
-            private void SortRootFolderExecute(object parameter)
-            {
-                SortDialog dlg = new SortDialog();
-                if (dlg.ShowDialog() == true)
-                {
-                    //Root.Sort(dlg.SelectedOptions);
-                    NotifyPropertyChanged(nameof(Root));
-                }
-            }
-        }
+        }       
     }
 }

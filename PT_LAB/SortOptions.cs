@@ -3,49 +3,30 @@ using System.Runtime.CompilerServices;
 
 namespace PT_LAB
 {
-    public enum SortBy
+    public class SortOptions : INotifyPropertyChanged
     {
-        Alphabetical,
-        ByExtension,
-        BySize,
-        ByDate
-    }
+        public enum SortByOption { Name, Extension, Size, Date }
+        public enum SortDirectionOption { Ascending, Descending }
 
-    public enum SortDirection
-    {
-        Ascending,
-        Descending
-    }
-
-    public class SortOptions : ViewModelBase
-    {
-        private SortBy _sortBy;
-        private SortDirection _direction;
-
-        public SortBy SortBy
+        private SortByOption _sortBy;
+        public SortByOption SortBy
         {
-            get => _sortBy;
-            set
-            {
-                if (_sortBy != value)
-                {
-                    _sortBy = value;
-                    NotifyPropertyChanged();
-                }
-            }
+            get { return _sortBy; }
+            set { _sortBy = value; OnPropertyChanged(); }
         }
 
-        public SortDirection Direction
+        private SortDirectionOption _direction;
+        public SortDirectionOption Direction
         {
-            get => _direction;
-            set
-            {
-                if (_direction != value)
-                {
-                    _direction = value;
-                    NotifyPropertyChanged();
-                }
-            }
+            get { return _direction; }
+            set { _direction = value; OnPropertyChanged(); }
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
     }
 }

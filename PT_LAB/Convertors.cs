@@ -2,6 +2,7 @@
 using System.DirectoryServices;
 using System.Globalization;
 using System.Windows.Data;
+using static PT_LAB.SortOptions;
 using Binding = System.Windows.Data.Binding;
 
 namespace PT_LAB
@@ -30,7 +31,7 @@ namespace PT_LAB
             if (parameterString.Length != 1)
                 return Binding.DoNothing;
 
-            foreach (var enumValue in Enum.GetValues(typeof(SortBy)))
+            foreach (var enumValue in Enum.GetValues(typeof(SortByOption)))
             {
                 if (enumValue.ToString().StartsWith(parameterString, StringComparison.OrdinalIgnoreCase))
                     return enumValue;

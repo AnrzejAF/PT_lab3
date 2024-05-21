@@ -11,6 +11,14 @@ namespace PT_LAB
 {
     public class FileInfoViewModel : FileSystemInfoViewModel
     {
+        public FileInfo FileInfo => (FileInfo)Model;
+
+        public string Extension => FileInfo.Extension;
+
+        public long Size => FileInfo.Length;
+
+        public DateTime Date => FileInfo.LastWriteTime;
+
         private ImageSource _image;
 
         public ImageSource Image

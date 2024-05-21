@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel.Design.Serialization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -15,6 +16,16 @@ namespace PT_LAB
     {
         public ObservableCollection<FileSystemInfoViewModel> Items { get; private set; }
          = new ObservableCollection<FileSystemInfoViewModel>();
+        public DirectoryInfo DirectoryInfo => (DirectoryInfo)Model;
+
+        public string Extension => string.Empty; // Katalogi nie mają rozszerzeń
+
+        public long Size => Items.Count; // Możesz też implementować rekurencyjne zliczanie elementów
+
+        private SortOptions _sortOptions;
+
+
+        public DateTime Date => DirectoryInfo.LastWriteTime;
 
         public bool Open(string path)
         {
@@ -66,7 +77,7 @@ namespace PT_LAB
         {
             App.Current.Dispatcher.Invoke(() => OnFileSystemChanged(e));
         }
-        
+
         private void OnFileSystemChanged(FileSystemEventArgs e)
         {
             switch (e.ChangeType)
@@ -140,20 +151,37 @@ namespace PT_LAB
                     }
                     break;
             }
+            // sort Root
+            Sort(_sortOptions);
         }
 
-        public List<DirectoryInfoViewModel> ? SubDirectories { get; set; }
+        public List<DirectoryInfoViewModel>? SubDirectories { get; set; }
 
-        public void Sort()
+        public void Sort(SortOptions options)
         {
-            if (SubDirectories == null)
+            _sortOptions = options;
+            // Oddzielnie sortuj katalogi i pliki
+            var directories = Items.OfType<DirectoryInfoViewModel>().ToList();
+            var files = Items.OfType<FileInfoViewModel>().ToList();
+
+            // Użyj klasy porównującej do sortowania
+            var comparer = new FileSystemInfoComparer(options.SortBy, options.Direction);
+
+            directories.Sort(comparer);
+            files.Sort(comparer);
+
+            // Wyczyszczenie i ponowne dodanie posortowanych elementów do kolekcji Items
+            Items.Clear();
+
+            foreach (var dir in directories)
             {
-                return;
+                Items.Add(dir);
+                dir.Sort(options); // Rekurencyjne sortowanie podkatalogów
             }
-            SubDirectories = SubDirectories.OrderBy(d => d.Name).ToList();
-            foreach (var subDir in SubDirectories)
+
+            foreach (var file in files)
             {
-                subDir.Sort();
+                Items.Add(file);
             }
         }
 
