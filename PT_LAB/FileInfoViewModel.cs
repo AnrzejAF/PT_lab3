@@ -17,6 +17,8 @@ namespace PT_LAB
 
         public long Size => FileInfo.Length;
 
+        public string Name => FileInfo.Name;
+
         public DateTime Date => FileInfo.LastWriteTime;
 
         private ImageSource _image;

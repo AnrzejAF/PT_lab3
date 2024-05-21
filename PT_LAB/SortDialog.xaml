@@ -18,10 +18,13 @@
             <StackPanel>
                 <RadioButton Content="{Binding Source={StaticResource Strings}, Path=Alphabetical}"
                              IsChecked="{Binding SortBy, Converter={StaticResource SortByToBooleanConverter}, ConverterParameter=A}"/>
+                
                 <RadioButton Content="{Binding Source={StaticResource Strings}, Path=ByExtension}"
                              IsChecked="{Binding SortBy, Converter={StaticResource SortByToBooleanConverter}, ConverterParameter=E}"/>
+                
                 <RadioButton Content="{Binding Source={StaticResource Strings}, Path=BySize}"
                              IsChecked="{Binding SortBy, Converter={StaticResource SortByToBooleanConverter}, ConverterParameter=S}"/>
+                
                 <RadioButton Content="{Binding Source={StaticResource Strings}, Path=ByDate}"
                              IsChecked="{Binding SortBy, Converter={StaticResource SortByToBooleanConverter}, ConverterParameter=D}"/>
             </StackPanel>

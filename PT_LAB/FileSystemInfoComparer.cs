@@ -10,6 +10,7 @@ namespace PT_LAB
     {
         private readonly SortOptions.SortByOption _sortBy;
         private readonly SortOptions.SortDirectionOption _direction;
+        public List<string> ComparisonLog { get; private set; } = new List<string>();
 
         public FileSystemInfoComparer(SortOptions.SortByOption sortBy, SortOptions.SortDirectionOption direction)
         {
@@ -24,7 +25,7 @@ namespace PT_LAB
             switch (_sortBy)
             {
                 case SortOptions.SortByOption.Name:
-                    //result = string.Compare(x.Name, y.Name, StringComparison.OrdinalIgnoreCase);
+                    result = string.Compare(x.Name, y.Name, StringComparison.OrdinalIgnoreCase);
                     break;
                 case SortOptions.SortByOption.Extension:
                     if (x is FileInfoViewModel xFile && y is FileInfoViewModel yFile)
@@ -40,7 +41,10 @@ namespace PT_LAB
             }
 
             if (_direction == SortOptions.SortDirectionOption.Descending)
-                result = -result;
+            { result = -result; }
+
+            string comparisonResult = $"Comparing {x.Name} and {y.Name}: {result}";
+            ComparisonLog.Add(comparisonResult);
 
             return result;
         }
