@@ -44,5 +44,11 @@ namespace PT_LAB
 
         public string Name => Model.Name;
 
+        protected FileSystemInfoViewModel(ViewModelBase owner)
+        {
+            Owner = owner;
+        }
+
+        public ViewModelBase Owner { get; private set; }
     }
 }

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
+using System.Windows.Input;
 
 namespace PT_LAB
 {
@@ -13,7 +14,7 @@ namespace PT_LAB
     {
         public FileInfo FileInfo => (FileInfo)Model;
 
-        public string Extension => FileInfo.Extension;
+        //public string Extension => FileInfo.Extension;
 
         public long Size => FileInfo.Length;
 
@@ -66,5 +67,41 @@ namespace PT_LAB
             }
         }
 
+        public ICommand OpenFileCommand { get; private set; }
+
+        public FileInfoViewModel(ViewModelBase owner) : base(owner)
+        {
+            OpenFileCommand = new RelayCommand(OpenFileExecute, OpenFileCanExecute);
+        }
+
+        public string Extension => Path.GetExtension(Model.FullName);
+
+        private bool OpenFileCanExecute(object parameter)
+        {
+            return OwnerExplorer?.OpenFileCommand.CanExecute(parameter) ?? false;
+        }
+
+        private void OpenFileExecute(object parameter)
+        {
+            OwnerExplorer?.OpenFileCommand.Execute(parameter);
+        }
+
+        public FileExplorer OwnerExplorer
+        {
+            get
+            {
+                var owner = Owner;
+                while (owner is DirectoryInfoViewModel ownerDirectory)
+                {
+                    if (ownerDirectory.Owner is FileExplorer explorer)
+                        return explorer;
+                    owner = ownerDirectory.Owner;
+                }
+                return null;
+            }
+        }
     }
+
+
+
 }

@@ -18,6 +18,10 @@ namespace PT_LAB
         private FileSystemWatcher Watcher;
         private SortOptions _sortOptions;
 
+        public DirectoryInfoViewModel(ViewModelBase owner) : base(owner)
+        {
+        }
+
         public bool Open(string path, SortOptions sortOptions = null)
         {
             bool result = false;
@@ -36,8 +40,10 @@ namespace PT_LAB
                 foreach (var dirName in Directory.GetDirectories(path))
                 {
                     var dirInfo = new DirectoryInfo(dirName);
-                    DirectoryInfoViewModel itemViewModel = new DirectoryInfoViewModel();
-                    itemViewModel.Model = dirInfo;
+                    var itemViewModel = new DirectoryInfoViewModel(this)
+                    {
+                        Model = dirInfo
+                    };
                     Items.Add(itemViewModel);
 
                     itemViewModel.Open(dirName, sortOptions);
@@ -46,8 +52,10 @@ namespace PT_LAB
                 foreach (var fileName in Directory.GetFiles(path))
                 {
                     var fileInfo = new FileInfo(fileName);
-                    FileInfoViewModel itemViewModel = new FileInfoViewModel();
-                    itemViewModel.Model = fileInfo;
+                    var itemViewModel = new FileInfoViewModel(this)
+                    {
+                        Model = fileInfo
+                    };
                     Items.Add(itemViewModel);
                 }
 
@@ -85,13 +93,19 @@ namespace PT_LAB
                     if (File.Exists(e.FullPath))
                     {
                         var fileInfo = new FileInfo(e.FullPath);
-                        FileInfoViewModel itemViewModel = new FileInfoViewModel { Model = fileInfo };
+                        var itemViewModel = new FileInfoViewModel(this)
+                        {
+                            Model = fileInfo
+                        };
                         Items.Add(itemViewModel);
                     }
                     else if (Directory.Exists(e.FullPath))
                     {
                         var dirInfo = new DirectoryInfo(e.FullPath);
-                        DirectoryInfoViewModel itemViewModel = new DirectoryInfoViewModel { Model = dirInfo };
+                        var itemViewModel = new DirectoryInfoViewModel(this)
+                        {
+                            Model = dirInfo
+                        };
                         Items.Add(itemViewModel);
                         itemViewModel.Open(e.FullPath, _sortOptions);
                     }
@@ -119,13 +133,19 @@ namespace PT_LAB
                         if (File.Exists(renamedEventArgs.FullPath))
                         {
                             var fileInfo = new FileInfo(renamedEventArgs.FullPath);
-                            FileInfoViewModel itemViewModel = new FileInfoViewModel { Model = fileInfo };
+                            var itemViewModel = new FileInfoViewModel(this)
+                            {
+                                Model = fileInfo
+                            };
                             Items.Add(itemViewModel);
                         }
                         else if (Directory.Exists(renamedEventArgs.FullPath))
                         {
                             var dirInfo = new DirectoryInfo(renamedEventArgs.FullPath);
-                            DirectoryInfoViewModel itemViewModel = new DirectoryInfoViewModel { Model = dirInfo };
+                            var itemViewModel = new DirectoryInfoViewModel(this)
+                            {
+                                Model = dirInfo
+                            };
                             Items.Add(itemViewModel);
                             itemViewModel.Open(renamedEventArgs.FullPath, _sortOptions);
                         }
@@ -163,13 +183,9 @@ namespace PT_LAB
             {
                 Items.Add(file);
             }
-
-            //// Wyświetlenie wyników sortowania w oknie dialogowym
-            //string log = string.Join(Environment.NewLine, comparer.ComparisonLog);
-            //MessageBox.Show(log, "Sort Results", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         public Exception Exception { get; private set; }
-
     }
+
 }

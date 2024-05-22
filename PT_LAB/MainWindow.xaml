@@ -5,7 +5,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PT_LAB"
         Title="MainWindow" Height="450" Width="700">
-
     <Window.Resources>
         <HierarchicalDataTemplate DataType="{x:Type local:DirectoryInfoViewModel}" ItemsSource="{Binding Items}">
             <StackPanel Orientation="Horizontal">
@@ -17,6 +16,14 @@
         </HierarchicalDataTemplate>
         <DataTemplate DataType="{x:Type local:FileInfoViewModel}" >
             <StackPanel Orientation="Horizontal">
+                <StackPanel.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem x:Name="OpenFileMenuItem"
+                                  Header="Open File"
+                                  Command="{Binding OpenFileCommand}"
+                                  CommandParameter="{Binding}" />
+                    </ContextMenu>
+                </StackPanel.ContextMenu>
                 <Image Width="16" Height="16" Source="{Binding Image}"/>
                 <TextBlock Text="{Binding Caption}" Margin="10,0,0,0"/>
             </StackPanel>
@@ -37,33 +44,41 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="auto"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-        <DockPanel LastChildFill="False" Grid.Row="0" Width="680" >
-            <ToolBar DockPanel.Dock="Left" >
-                <Menu>
-                    <MenuItem Header="{Binding Source={StaticResource Strings}, Path=File}">
-                        <MenuItem Header="{Binding Source={StaticResource Strings}, Path=Open_Directory}"  Command="{Binding OpenRootFolderCommand}" />
-                        <MenuItem Header="{Binding Source={StaticResource Strings}, Path=Exit}" Click="Exit_Click"/>
-                        <MenuItem Header="Sort Root Folder" Command="{Binding SortRootFolderCommand}" />
+        <!-- Menu po lewej stronie -->
+        <ToolBar Grid.Row="0" Grid.Column="0">
+            <Menu>
+                <MenuItem Header="{Binding Source={StaticResource Strings}, Path=File}">
+                    <MenuItem Header="{Binding Source={StaticResource Strings}, Path=Open_Directory}"  Command="{Binding OpenRootFolderCommand}" />
+                    <MenuItem Header="{Binding Source={StaticResource Strings}, Path=Exit}" Click="Exit_Click"/>
+                    <MenuItem Header="Sort Root Folder" Command="{Binding SortRootFolderCommand}" />
+                </MenuItem>
+            </Menu>
+        </ToolBar>
 
-                    </MenuItem>
-                </Menu>
-            </ToolBar>
-            <ToggleButton DockPanel.Dock="Right" x:Name="PolishLangugageButton"  Style="{StaticResource LangButtonStyle}"
+        <!-- ToggleButtons po prawej stronie -->
+        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <ToggleButton x:Name="PolishLangugageButton" Style="{StaticResource LangButtonStyle}"
                           IsChecked="{Binding Lang, Converter={StaticResource LangBoolConverter}, ConverterParameter=pl}">
                 <Image Source="/Images/PL.png" Width="32" />
             </ToggleButton>
-            <ToggleButton DockPanel.Dock="Right"  x:Name="EnglishLangugageButton" Style="{StaticResource LangButtonStyle}"
-                          IsChecked="{Binding Lang, Converter={StaticResource LangBoolConverter}, ConverterParameter=en}">
-                <Image Source="/Images/EN.png" Width="32" />
+            <ToggleButton x:Name="EnglishLangugageButton" Style="{StaticResource LangButtonStyle}"
+                          IsChecked="{Binding Lang, Converter={StaticResource LangBoolConverter}, ConverterParameter=en}" Width="32">
+                <Image Source="/Images/EN.png" Width="34" />
             </ToggleButton>
-        </DockPanel>
-        <TreeView x:Name="FoldersTreeView" Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Root.Items}" />
+        </StackPanel>
 
+        <!-- TreeView po lewej stronie w drugim wierszu -->
+        <TreeView x:Name="FoldersTreeView" Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Root.Items}" Margin="0,0,5,0" />
+
+        <!-- ScrollViewer po prawej stronie w drugim wierszu -->
+        <ScrollViewer x:Name="ContentViewer" Grid.Row="1" Grid.Column="1" Margin="10,0,0,0" />
     </Grid>
 </Window>
-
