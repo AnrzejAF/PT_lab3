@@ -4,16 +4,23 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace PT_LAB
 {
     public class FileExplorer : ViewModelBase
     {
+        public static readonly string[] TextFilesExtensions = new string[] { ".txt", ".ini", ".log" };
+
+        public ICommand OpenFileCommand { get; private set; }
+
         public FileExplorer()
         {
             NotifyPropertyChanged(nameof(Lang));
             OpenRootFolderCommand = new RelayCommand(OpenRootFolderExecute);
             SortRootFolderCommand = new RelayCommand(SortRootFolderExecute, CanSortRootFolderExecute);
+            OpenFileCommand = new RelayCommand(OpenFileExecute, OpenFileCanExecute);
+
         }
 
         public DirectoryInfoViewModel? Root { get; set; }
@@ -22,7 +29,7 @@ namespace PT_LAB
 
         public void OpenRoot(string path)
         {
-            Root = new DirectoryInfoViewModel();
+            Root = new DirectoryInfoViewModel(this);
             Root.Open(path);
         }
 
@@ -68,5 +75,40 @@ namespace PT_LAB
                 NotifyPropertyChanged(nameof(Root));
             }
         }
+        private bool OpenFileCanExecute(object parameter)
+        {
+            if (parameter is FileInfoViewModel viewModel)
+            {
+                var extension = viewModel.Extension?.ToLower();
+                return TextFilesExtensions.Contains(extension);
+            }
+            return false;
+        }
+
+        private void OpenFileExecute(object parameter)
+        {
+            if (parameter is FileInfoViewModel viewModel)
+            {
+                OnOpenFileRequest?.Invoke(this, viewModel);
+            }
+        }
+
+        public event EventHandler<FileInfoViewModel> OnOpenFileRequest;
+
+        public object GetFileContent(FileInfoViewModel viewModel)
+        {
+            var extension = viewModel.Extension?.ToLower();
+            if (TextFilesExtensions.Contains(extension))
+            {
+                return GetTextFileContent(viewModel);
+            }
+            return null;
+        }
+
+        private string GetTextFileContent(FileInfoViewModel viewModel)
+        {
+            return System.IO.File.ReadAllText(viewModel.Model.FullName);
+        }
+
     }
 }
