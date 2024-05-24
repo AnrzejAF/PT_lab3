@@ -14,6 +14,13 @@ namespace PT_LAB
 
         public ICommand OpenFileCommand { get; private set; }
 
+        private SortOptions _currentSortOptions = new SortOptions();
+
+        public SortOptions CurrentSortOptions
+        {
+            get { return _currentSortOptions; }
+            set { _currentSortOptions = value; NotifyPropertyChanged(); }
+        }
         public FileExplorer()
         {
             NotifyPropertyChanged(nameof(Lang));
@@ -68,7 +75,7 @@ namespace PT_LAB
 
         public void SortRootFolderExecute(object parameter)
         {
-            SortDialog dlg = new SortDialog();
+            SortDialog dlg = new SortDialog(CurrentSortOptions);
             if (dlg.ShowDialog() == true)
             {
                 Root.Sort(dlg.SortOptions);

@@ -1,4 +1,4 @@
-﻿ using System.DirectoryServices;
+﻿using System.DirectoryServices;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -13,10 +13,10 @@ namespace PT_LAB
     {
         public SortOptions SortOptions { get; set; }
 
-        public SortDialog()
+        public SortDialog(SortOptions sortOptions)
         {
             InitializeComponent();
-            SortOptions = new SortOptions();
+            SortOptions = sortOptions;
             this.DataContext = SortOptions;
         }
 

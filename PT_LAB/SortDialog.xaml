@@ -14,22 +14,22 @@
     <StackPanel>
         <Label Content="{Binding Source={StaticResource Strings}, Path=SortOptions}"/>
 
-        <GroupBox Header="{Binding Source={StaticResource Strings}, Path=SortMode}" Margin= "10">
+        <GroupBox Header="{Binding Source={StaticResource Strings}, Path=SortMode}" Margin="10">
             <StackPanel>
                 <RadioButton Content="{Binding Source={StaticResource Strings}, Path=Alphabetical}"
-                             IsChecked="{Binding SortBy, Converter={StaticResource SortByToBooleanConverter}, ConverterParameter=A}"/>
-                
+                             IsChecked="{Binding SortBy, Converter={StaticResource SortByToBooleanConverter}, ConverterParameter=N}"/>
+
                 <RadioButton Content="{Binding Source={StaticResource Strings}, Path=ByExtension}"
                              IsChecked="{Binding SortBy, Converter={StaticResource SortByToBooleanConverter}, ConverterParameter=E}"/>
-                
+
                 <RadioButton Content="{Binding Source={StaticResource Strings}, Path=BySize}"
                              IsChecked="{Binding SortBy, Converter={StaticResource SortByToBooleanConverter}, ConverterParameter=S}"/>
-                
+
                 <RadioButton Content="{Binding Source={StaticResource Strings}, Path=ByDate}"
                              IsChecked="{Binding SortBy, Converter={StaticResource SortByToBooleanConverter}, ConverterParameter=D}"/>
             </StackPanel>
         </GroupBox>
-        <GroupBox Header="{Binding Source={StaticResource Strings}, Path=SortOrder  }" Margin= "10">
+        <GroupBox Header="{Binding Source={StaticResource Strings}, Path=SortOrder}" Margin="10">
             <StackPanel>
                 <RadioButton Content="{Binding Source={StaticResource Strings}, Path=Ascending}"
                              IsChecked="{Binding Direction, Converter={StaticResource SortDirectionToBooleanConverter}, ConverterParameter=A}"/>
@@ -39,6 +39,6 @@
             </StackPanel>
         </GroupBox>
 
-        <Button Content="{Binding Source={StaticResource Strings}, Path=Sort}" Width="60" HorizontalAlignment="Center" Click="SortButton_Click"/>
+        <Button Content="Sort" Width="60" HorizontalAlignment="Center" Click="SortButton_Click"/>
     </StackPanel>
 </Window>

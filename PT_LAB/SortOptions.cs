@@ -8,6 +8,13 @@ namespace PT_LAB
         public enum SortByOption { Name, Extension, Size, Date }
         public enum SortDirectionOption { Ascending, Descending }
 
+        // add default values
+        public SortOptions()
+        {
+            SortBy = SortByOption.Name;
+            Direction = SortDirectionOption.Ascending;
+        }
+
         private SortByOption _sortBy;
         public SortByOption SortBy
         {
