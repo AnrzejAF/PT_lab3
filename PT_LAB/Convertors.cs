@@ -65,7 +65,7 @@ namespace PT_LAB
             if (parameterString.Length != 1)
                 return Binding.DoNothing;
 
-            foreach (var enumValue in Enum.GetValues(typeof(SortDirection)))
+            foreach (var enumValue in Enum.GetValues(typeof(SortDirectionOption)))
             {
                 if (enumValue.ToString().StartsWith(parameterString, StringComparison.OrdinalIgnoreCase))
                     return enumValue;

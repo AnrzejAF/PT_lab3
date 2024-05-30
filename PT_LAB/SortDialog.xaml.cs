@@ -16,7 +16,7 @@ namespace PT_LAB
         public SortDialog(SortOptions sortOptions)
         {
             InitializeComponent();
-            SortOptions = sortOptions;
+            SortOptions = sortOptions ?? new SortOptions();
             this.DataContext = SortOptions;
         }
 
