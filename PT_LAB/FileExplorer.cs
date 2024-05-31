@@ -15,6 +15,9 @@ namespace PT_LAB
 {
     public class FileExplorer : ViewModelBase
     {
+
+        private CancellationTokenSource _cancellationTokenSource;
+
         private string _statusMessage;
         public string StatusMessage
         {
@@ -133,13 +136,40 @@ namespace PT_LAB
             SortDialog dlg = new SortDialog(CurrentSortOptions);
             if (dlg.ShowDialog() == true)
             {
-                await Root.SortAsync(dlg.SortOptions);
-                StatusMessage = "Directory sorted";
+                _cancellationTokenSource = new CancellationTokenSource();
+                StatusMessage = "Sorting directory...";
                 NotifyPropertyChanged(nameof(StatusMessage));
-                await Task.Delay(1000);
-                StatusMessage = "Ready";
-                NotifyPropertyChanged(nameof(Root));
+                await Task.Delay(10);
+
+                try
+                {
+                    await Root.SortAsync(dlg.SortOptions, _cancellationTokenSource.Token);
+                    if (!_cancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        StatusMessage = "Directory sorted";
+                        NotifyPropertyChanged(nameof(StatusMessage));
+                        await Task.Delay(500);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    StatusMessage = "Sorting cancelled.";
+                    NotifyPropertyChanged(nameof(StatusMessage));
+                    await Task.Delay(500);
+                }
+                finally
+                {
+                    _cancellationTokenSource = null;
+                    NotifyPropertyChanged(nameof(StatusMessage));
+                }
             }
+        }
+
+        public ICommand CancelCommand => new RelayCommand(Cancel);
+
+        private void Cancel(object parameter)
+        {
+            _cancellationTokenSource?.Cancel();
         }
 
         private bool OpenFileCanExecute(object parameter)

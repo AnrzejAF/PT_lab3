@@ -46,10 +46,10 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="20" />
+            <RowDefinition Height="30" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250" />
+            <ColumnDefinition Width="300" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -83,8 +83,10 @@
         <ScrollViewer x:Name="ContentViewer" Grid.Row="1" Grid.Column="1" Margin="10,0,0,0" />
 
         <StatusBar Grid.Row="2"> 
-            <TextBlock Text="{Binding StatusMessage}"  />
+            <TextBlock Text="{Binding StatusMessage}"/>
+            <Button Content="{Binding Source={StaticResource Strings}, Path=Cancel}" Command="{Binding CancelCommand}" />
         </StatusBar>
 
     </Grid>
 </Window>
+ 

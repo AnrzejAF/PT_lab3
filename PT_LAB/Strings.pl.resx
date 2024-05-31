@@ -159,4 +159,7 @@
   <data name="Sort" xml:space="preserve">
     <value>Sortuj</value>
   </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Anuluj</value>
+  </data>
 </root>

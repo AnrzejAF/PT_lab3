@@ -36,6 +36,7 @@ namespace PT_LAB
 
         private FileSystemWatcher Watcher;
         private SortOptions _sortOptions;
+        private CancellationToken _cancellationToken = new CancellationToken();
 
         public DirectoryInfoViewModel(ViewModelBase owner) : base(owner)
         {
@@ -113,7 +114,7 @@ namespace PT_LAB
                 if (sortOptions != null)
                 {
                     _sortOptions = sortOptions;
-                    Task task = SortAsync(_sortOptions);
+                    Task task = SortAsync(_sortOptions, _cancellationToken);
                 }
                 StatusMessage = "Directory loaded";
                 NotifyPropertyChanged(nameof(StatusMessage));
@@ -213,61 +214,10 @@ namespace PT_LAB
                     break;
             }
 
-            SortAsync(_sortOptions);
+            SortAsync(_sortOptions, _cancellationToken);
         }
 
-        //public async Task SortAsync(SortOptions options)
-        //{
-        //    _sortOptions = options;
-        //    StatusMessage = "Sorting directory...";
-        //    await Task.Delay(1000);
-        //    NotifyPropertyChanged(nameof(StatusMessage));
-
-        //    await Task.Run(() =>
-        //    {
-        //        var directories = Items.OfType<DirectoryInfoViewModel>().ToList();
-        //        var files = Items.OfType<FileInfoViewModel>().ToList();
-
-        //        var comparer = new FileSystemInfoComparer(options.SortBy, options.Direction);
-
-        //        directories.Sort(comparer);
-        //        files.Sort(comparer);
-
-        //        App.Current.Dispatcher.Invoke(() =>
-        //        {
-        //            Items.Clear();
-        //            foreach (var dir in directories)
-        //            {
-        //                Items.Add(dir);
-        //            }
-
-        //            foreach (var file in files)
-        //            {
-        //                Items.Add(file);
-        //            }
-        //        });
-
-        //        Debug.WriteLine($"Sorting directory on thread {Thread.CurrentThread.ManagedThreadId}");
-
-        //        var tasks = directories.Select(dir =>
-        //        {
-        //            return Task.Run(async () =>
-        //            {
-        //                Debug.WriteLine($"Starting sort of {dir.Model.FullName} on thread {Thread.CurrentThread.ManagedThreadId}");
-        //                await dir.SortAsync(options);
-        //                Debug.WriteLine($"Finished sort of {dir.Model.FullName} on thread {Thread.CurrentThread.ManagedThreadId}");
-        //            });
-        //        }).ToArray();
-
-        //        Task.WaitAll(tasks);
-        //    });
-
-        //    StatusMessage = $"Sorted by {options.SortBy} {options.Direction}";
-        //    await Task.Delay(1000);
-        //    NotifyPropertyChanged(nameof(StatusMessage));
-        //}
-
-        public async Task SortAsync(SortOptions options)
+        public async Task SortAsync(SortOptions options, CancellationToken cancellationToken)
         {
             _sortOptions = options;
             StatusMessage = "Sorting directory...";
@@ -306,29 +256,46 @@ namespace PT_LAB
                 {
                     return Task.Factory.StartNew(async () =>
                     {
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            Debug.WriteLine("Cancellation requested.");
+                            return;
+                        }
+
                         StatusMessage = $"Sorting {dir.Model.FullName}...";
                         NotifyPropertyChanged(nameof(StatusMessage));
-                        await Task.Delay(300);
-
+                        await Task.Delay(30);
+                        
                         threadIds.Add(Thread.CurrentThread.ManagedThreadId);
-                        await dir.SortAsync(options);
+                        await dir.SortAsync(options, cancellationToken);
+
                         StatusMessage = $"Sorted {dir.Model.FullName}";
                         NotifyPropertyChanged(nameof(StatusMessage));
-                        await Task.Delay(300);
-
-                    }, TaskCreationOptions.PreferFairness).Unwrap();
+                        await Task.Delay(30);
+                    }, TaskCreationOptions.LongRunning).Unwrap();
                 }).ToArray();
 
                 Task.WaitAll(tasks);
-            });
+            }, cancellationToken);
 
-            StatusMessage = $"Sorted by {options.SortBy} {options.Direction}";
+            if (cancellationToken.IsCancellationRequested)
+            {
+                StatusMessage = "Sorting cancelled.";
+                NotifyPropertyChanged(nameof(StatusMessage));
+                await Task.Delay(30);
+            }
+            else
+            {
+                StatusMessage = $"Sorted by {options.SortBy} {options.Direction}";
+                NotifyPropertyChanged(nameof(StatusMessage));
+                await Task.Delay(30);
+            }
             NotifyPropertyChanged(nameof(StatusMessage));
-            await Task.Delay(300);
 
             var uniqueThreadIds = threadIds.Distinct().Count();
-            Debug.WriteLine($"Number of threads: {uniqueThreadIds}");
+            Debug.WriteLine($"Number of unique threads used: {uniqueThreadIds}");
         }
+
 
         public Exception Exception { get; private set; }
     }
