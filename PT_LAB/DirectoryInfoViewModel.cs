@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.ComponentModel.Design.Serialization;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -217,32 +218,26 @@ namespace PT_LAB
         public async Task SortAsync(SortOptions options)
         {
             _sortOptions = options;
-            // change status message to "Sorting directory"
-            StatusMessage = "Sorting directory";
+            StatusMessage = "Sorting directory...";
             await Task.Delay(1000);
             NotifyPropertyChanged(nameof(StatusMessage));
-                        
-            await Task.Run(async () =>
+
+            await Task.Run(() =>
             {
-                // Oddzielne sortowanie katalogów i plików
                 var directories = Items.OfType<DirectoryInfoViewModel>().ToList();
                 var files = Items.OfType<FileInfoViewModel>().ToList();
 
-                // Użycie klasy porównującej do sortowania
                 var comparer = new FileSystemInfoComparer(options.SortBy, options.Direction);
 
                 directories.Sort(comparer);
                 files.Sort(comparer);
 
-                // Wyczyszczenie i ponowne dodanie posortowanych elementów do kolekcji Items
                 App.Current.Dispatcher.Invoke(() =>
                 {
                     Items.Clear();
-
                     foreach (var dir in directories)
                     {
                         Items.Add(dir);
-                        dir.SortAsync(options); // Rekurencyjne sortowanie podkatalogów
                     }
 
                     foreach (var file in files)
@@ -251,13 +246,25 @@ namespace PT_LAB
                     }
                 });
 
-                StatusMessage = $"Sorted by {options.SortBy} {options.Direction}";
-                await Task.Delay(1000);
-                NotifyPropertyChanged(nameof(StatusMessage));
+                Debug.WriteLine($"Sorting directory on thread {Thread.CurrentThread.ManagedThreadId}");
+
+                var tasks = directories.Select(dir =>
+                {
+                    return Task.Run(async () =>
+                    {
+                        Debug.WriteLine($"Starting sort of {dir.Model.FullName} on thread {Thread.CurrentThread.ManagedThreadId}");
+                        await dir.SortAsync(options);
+                        Debug.WriteLine($"Finished sort of {dir.Model.FullName} on thread {Thread.CurrentThread.ManagedThreadId}");
+                    });
+                }).ToArray();
+
+                Task.WaitAll(tasks);
             });
+
+            StatusMessage = $"Sorted by {options.SortBy} {options.Direction}";
+            await Task.Delay(1000);
+            NotifyPropertyChanged(nameof(StatusMessage));
         }
-
-
         public Exception Exception { get; private set; }
     }
 
