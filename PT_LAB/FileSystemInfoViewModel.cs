@@ -9,6 +9,17 @@ namespace PT_LAB
 {
     public class FileSystemInfoViewModel : ViewModelBase
     {
+        private string _statusMessage;
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            set
+            {
+                _statusMessage = value;
+                NotifyPropertyChanged();
+            }
+        }
+
         public DateTime LastWriteTime
         {
             get { return _lastWriteTime; }

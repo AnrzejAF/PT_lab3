@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.ComponentModel.Design.Serialization;
 using System.IO;
 using System.Linq;
@@ -14,20 +16,78 @@ namespace PT_LAB
 {
     public class DirectoryInfoViewModel : FileSystemInfoViewModel
     {
-        public ObservableCollection<FileSystemInfoViewModel> Items { get; private set; } = new ObservableCollection<FileSystemInfoViewModel>();
+        private DispatchedObservableCollection<FileSystemInfoViewModel> _items;
+
+        public DispatchedObservableCollection<FileSystemInfoViewModel> Items
+        {
+            get => _items;
+            set
+            {
+                if (_items != value)
+                {
+                    _items = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+        private string _statusMessage;
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            set
+            {
+                if (_statusMessage != value)
+                {
+                    _statusMessage = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
         private FileSystemWatcher Watcher;
         private SortOptions _sortOptions;
 
         public DirectoryInfoViewModel(ViewModelBase owner) : base(owner)
         {
+            Items = new DispatchedObservableCollection<FileSystemInfoViewModel>();
+            Items.CollectionChanged += Items_CollectionChanged;
+
         }
 
+        private void Items_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    foreach (var item in e.NewItems.Cast<FileSystemInfoViewModel>())
+                    {
+                        item.PropertyChanged += Item_PropertyChanged;
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    foreach (var item in e.OldItems.Cast<FileSystemInfoViewModel>())
+                    {
+                        item.PropertyChanged -= Item_PropertyChanged;
+                    }
+                    break;
+            }
+        }
+
+        private void Item_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "StatusMessage" && sender is FileSystemInfoViewModel viewModel)
+            {
+                this.StatusMessage = viewModel.StatusMessage;
+            }
+        }
         public bool Open(string path, SortOptions sortOptions = null)
         {
             bool result = false;
 
             try
             {
+                StatusMessage = "Loading directory:";
                 Watcher = new FileSystemWatcher(path);
 
                 Watcher.Created += OnFileSystemChanged;
@@ -64,12 +124,14 @@ namespace PT_LAB
                     _sortOptions = sortOptions;
                     Sort(_sortOptions);
                 }
-
+                StatusMessage = "Directory loaded}";
                 result = true;
             }
             catch (Exception ex)
             {
                 Exception = ex;
+                StatusMessage = "Error loading directory";
+
             }
 
             return result;
@@ -82,6 +144,7 @@ namespace PT_LAB
 
         public void OnFileSystemChanged(object sender, FileSystemEventArgs e)
         {
+            //StatusMessage = $"File system changed: {e.ChangeType} {e.FullPath}";
             App.Current.Dispatcher.Invoke(() => OnFileSystemChanged(e));
         }
 
@@ -183,6 +246,7 @@ namespace PT_LAB
             {
                 Items.Add(file);
             }
+            StatusMessage = $"Sorted by {options.SortBy} {options.Direction}";
         }
 
         public Exception Exception { get; private set; }

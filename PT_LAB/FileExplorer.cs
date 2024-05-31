@@ -5,11 +5,27 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Collections.Specialized;
+using System.Windows.Threading;
+using System.ComponentModel;
+using System.Windows;
+
 
 namespace PT_LAB
 {
     public class FileExplorer : ViewModelBase
     {
+        private string _statusMessage;
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            set
+            {
+                _statusMessage = value;
+                NotifyPropertyChanged();
+            }
+        }
+
         public static readonly string[] TextFilesExtensions = new string[] { ".txt", ".ini", ".log" };
 
         public ICommand OpenFileCommand { get; private set; }
@@ -21,23 +37,52 @@ namespace PT_LAB
             get { return _currentSortOptions; }
             set { _currentSortOptions = value; NotifyPropertyChanged(); }
         }
-        public FileExplorer()
+
+        private DirectoryInfoViewModel _root;
+        public DirectoryInfoViewModel Root
         {
-            NotifyPropertyChanged(nameof(Lang));
-            OpenRootFolderCommand = new RelayCommand(OpenRootFolderExecute);
-            SortRootFolderCommand = new RelayCommand(SortRootFolderExecute, CanSortRootFolderExecute);
-            OpenFileCommand = new RelayCommand(OpenFileExecute, OpenFileCanExecute);
-
+            get => _root;
+            set
+            {
+                if (_root != null)
+                {
+                    _root.PropertyChanged -= Root_PropertyChanged;
+                }
+                _root = value;
+                if (_root != null)
+                {
+                    _root.PropertyChanged += Root_PropertyChanged;
+                }
+                NotifyPropertyChanged();
+            }
         }
-
-        public DirectoryInfoViewModel? Root { get; set; }
         public RelayCommand OpenRootFolderCommand { get; private set; }
         public RelayCommand SortRootFolderCommand { get; private set; }
 
+
+
+        public FileExplorer()
+        {
+            NotifyPropertyChanged(nameof(Lang));
+            OpenRootFolderCommand = new RelayCommand(OpenRootFolderExecuteAsync);
+            SortRootFolderCommand = new RelayCommand(SortRootFolderExecute, CanSortRootFolderExecute);
+            OpenFileCommand = new RelayCommand(OpenFileExecute, OpenFileCanExecute);
+
+            if (Root != null)
+            {
+                Root.PropertyChanged += Root_PropertyChanged;
+                Root.Items.CollectionChanged += Items_CollectionChanged;
+            }
+        }
+
         public void OpenRoot(string path)
         {
-            Root = new DirectoryInfoViewModel(this);
-            Root.Open(path);
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                Root = new DirectoryInfoViewModel(this);
+                Root.Open(path);
+                NotifyPropertyChanged(nameof(Root));
+            });
         }
 
         public string Lang
@@ -56,15 +101,23 @@ namespace PT_LAB
             }
         }
 
-        private void OpenRootFolderExecute(object parameter)
+        private async void OpenRootFolderExecuteAsync(object parameter)
         {
             var description = Strings.Description;
             var dlg = new System.Windows.Forms.FolderBrowserDialog() { Description = description };
             if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 var path = dlg.SelectedPath;
-                OpenRoot(path);
-                NotifyPropertyChanged(nameof(Root));
+                StatusMessage = "Loading directory...";
+                await Task.Run(() =>
+                {
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        OpenRoot(path);
+                        NotifyPropertyChanged(nameof(Root));
+                        StatusMessage = "Ready";
+                    });
+                });
             }
         }
 
@@ -78,10 +131,13 @@ namespace PT_LAB
             SortDialog dlg = new SortDialog(CurrentSortOptions);
             if (dlg.ShowDialog() == true)
             {
+                StatusMessage = "Sorting directory...";
                 Root.Sort(dlg.SortOptions);
+                StatusMessage = "Directory sorted";
                 NotifyPropertyChanged(nameof(Root));
             }
         }
+
         private bool OpenFileCanExecute(object parameter)
         {
             if (parameter is FileInfoViewModel viewModel)
@@ -117,5 +173,39 @@ namespace PT_LAB
             return System.IO.File.ReadAllText(viewModel.Model.FullName);
         }
 
+        private void Items_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    foreach (var item in e.NewItems.Cast<FileSystemInfoViewModel>())
+                    {
+                        item.PropertyChanged += Item_PropertyChanged;
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    foreach (var item in e.OldItems.Cast<FileSystemInfoViewModel>())
+                    {
+                        item.PropertyChanged -= Item_PropertyChanged;
+                    }
+                    break;
+            }
+        }
+
+        private void Item_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "StatusMessage" && sender is FileSystemInfoViewModel viewModel)
+            {
+                this.StatusMessage = viewModel.StatusMessage;
+            }
+        }
+
+        private void Root_PropertyChanged(object sender, PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == "StatusMessage" && sender is FileSystemInfoViewModel viewModel)
+            {
+                this.StatusMessage = viewModel.StatusMessage;
+            }
+        }
     }
 }
