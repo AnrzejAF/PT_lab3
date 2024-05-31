@@ -31,19 +31,6 @@ namespace PT_LAB
             }
         }
 
-        private string _statusMessage;
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set
-            {
-                if (_statusMessage != value)
-                {
-                    _statusMessage = value;
-                    NotifyPropertyChanged();
-                }
-            }
-        }
 
         private FileSystemWatcher Watcher;
         private SortOptions _sortOptions;
@@ -81,13 +68,15 @@ namespace PT_LAB
                 this.StatusMessage = viewModel.StatusMessage;
             }
         }
-        public bool Open(string path, SortOptions sortOptions = null)
+        public async Task<bool> Open(string path, SortOptions sortOptions = null)
         {
             bool result = false;
 
             try
             {
                 StatusMessage = "Loading directory:";
+                NotifyPropertyChanged(nameof(StatusMessage));
+
                 Watcher = new FileSystemWatcher(path);
 
                 Watcher.Created += OnFileSystemChanged;
@@ -122,15 +111,19 @@ namespace PT_LAB
                 if (sortOptions != null)
                 {
                     _sortOptions = sortOptions;
-                    Sort(_sortOptions);
+                    Task task = SortAsync(_sortOptions);
                 }
-                StatusMessage = "Directory loaded}";
+                StatusMessage = "Directory loaded";
+                NotifyPropertyChanged(nameof(StatusMessage));
+                await Task.Delay(500);
                 result = true;
             }
             catch (Exception ex)
             {
                 Exception = ex;
                 StatusMessage = "Error loading directory";
+                NotifyPropertyChanged(nameof(StatusMessage));
+                await Task.Delay(500);
 
             }
 
@@ -144,11 +137,13 @@ namespace PT_LAB
 
         public void OnFileSystemChanged(object sender, FileSystemEventArgs e)
         {
-            //StatusMessage = $"File system changed: {e.ChangeType} {e.FullPath}";
+            StatusMessage = $"File system changed: {e.ChangeType} {e.FullPath}";
+            NotifyPropertyChanged(nameof(StatusMessage));
+            Task.Delay(500);
             App.Current.Dispatcher.Invoke(() => OnFileSystemChanged(e));
         }
 
-        private void OnFileSystemChanged(FileSystemEventArgs e)
+        private async void OnFileSystemChanged(FileSystemEventArgs e)
         {
             switch (e.ChangeType)
             {
@@ -216,38 +211,52 @@ namespace PT_LAB
                     break;
             }
 
-            Sort(_sortOptions);
+            SortAsync(_sortOptions);
         }
 
-        public void Sort(SortOptions options)
+        public async Task SortAsync(SortOptions options)
         {
             _sortOptions = options;
-
-            // Oddzielnie sortuj katalogi i pliki
-            var directories = Items.OfType<DirectoryInfoViewModel>().ToList();
-            var files = Items.OfType<FileInfoViewModel>().ToList();
-
-            // Użyj klasy porównującej do sortowania
-            var comparer = new FileSystemInfoComparer(options.SortBy, options.Direction);
-
-            directories.Sort(comparer);
-            files.Sort(comparer);
-
-            // Wyczyszczenie i ponowne dodanie posortowanych elementów do kolekcji Items
-            Items.Clear();
-
-            foreach (var dir in directories)
+            // change status message to "Sorting directory"
+            StatusMessage = "Sorting directory";
+            await Task.Delay(1000);
+            NotifyPropertyChanged(nameof(StatusMessage));
+                        
+            await Task.Run(async () =>
             {
-                Items.Add(dir);
-                dir.Sort(options); // Rekurencyjne sortowanie podkatalogów
-            }
+                // Oddzielne sortowanie katalogów i plików
+                var directories = Items.OfType<DirectoryInfoViewModel>().ToList();
+                var files = Items.OfType<FileInfoViewModel>().ToList();
 
-            foreach (var file in files)
-            {
-                Items.Add(file);
-            }
-            StatusMessage = $"Sorted by {options.SortBy} {options.Direction}";
+                // Użycie klasy porównującej do sortowania
+                var comparer = new FileSystemInfoComparer(options.SortBy, options.Direction);
+
+                directories.Sort(comparer);
+                files.Sort(comparer);
+
+                // Wyczyszczenie i ponowne dodanie posortowanych elementów do kolekcji Items
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    Items.Clear();
+
+                    foreach (var dir in directories)
+                    {
+                        Items.Add(dir);
+                        dir.SortAsync(options); // Rekurencyjne sortowanie podkatalogów
+                    }
+
+                    foreach (var file in files)
+                    {
+                        Items.Add(file);
+                    }
+                });
+
+                StatusMessage = $"Sorted by {options.SortBy} {options.Direction}";
+                await Task.Delay(1000);
+                NotifyPropertyChanged(nameof(StatusMessage));
+            });
         }
+
 
         public Exception Exception { get; private set; }
     }

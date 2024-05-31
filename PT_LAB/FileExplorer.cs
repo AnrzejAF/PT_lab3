@@ -109,6 +109,7 @@ namespace PT_LAB
             {
                 var path = dlg.SelectedPath;
                 StatusMessage = "Loading directory...";
+                NotifyPropertyChanged(nameof(StatusMessage));
                 await Task.Run(() =>
                 {
                     App.Current.Dispatcher.Invoke(() =>
@@ -116,6 +117,7 @@ namespace PT_LAB
                         OpenRoot(path);
                         NotifyPropertyChanged(nameof(Root));
                         StatusMessage = "Ready";
+                        NotifyPropertyChanged(nameof(StatusMessage));
                     });
                 });
             }
@@ -126,14 +128,16 @@ namespace PT_LAB
             return Root != null;
         }
 
-        public void SortRootFolderExecute(object parameter)
+        public async void SortRootFolderExecute(object parameter)
         {
             SortDialog dlg = new SortDialog(CurrentSortOptions);
             if (dlg.ShowDialog() == true)
             {
-                StatusMessage = "Sorting directory...";
-                Root.Sort(dlg.SortOptions);
+                await Root.SortAsync(dlg.SortOptions);
                 StatusMessage = "Directory sorted";
+                NotifyPropertyChanged(nameof(StatusMessage));
+                await Task.Delay(1000);
+                StatusMessage = "Ready";
                 NotifyPropertyChanged(nameof(Root));
             }
         }
@@ -173,6 +177,15 @@ namespace PT_LAB
             return System.IO.File.ReadAllText(viewModel.Model.FullName);
         }
 
+
+        private void Root_PropertyChanged(object sender, PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == "StatusMessage" && sender is DirectoryInfoViewModel viewModel)
+            {
+                this.StatusMessage = viewModel.StatusMessage;
+            }
+        }
+
         private void Items_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             switch (e.Action)
@@ -195,14 +208,6 @@ namespace PT_LAB
         private void Item_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == "StatusMessage" && sender is FileSystemInfoViewModel viewModel)
-            {
-                this.StatusMessage = viewModel.StatusMessage;
-            }
-        }
-
-        private void Root_PropertyChanged(object sender, PropertyChangedEventArgs args)
-        {
-            if (args.PropertyName == "StatusMessage" && sender is FileSystemInfoViewModel viewModel)
             {
                 this.StatusMessage = viewModel.StatusMessage;
             }
