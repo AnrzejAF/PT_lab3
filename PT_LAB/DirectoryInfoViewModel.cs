@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -215,12 +216,65 @@ namespace PT_LAB
             SortAsync(_sortOptions);
         }
 
+        //public async Task SortAsync(SortOptions options)
+        //{
+        //    _sortOptions = options;
+        //    StatusMessage = "Sorting directory...";
+        //    await Task.Delay(1000);
+        //    NotifyPropertyChanged(nameof(StatusMessage));
+
+        //    await Task.Run(() =>
+        //    {
+        //        var directories = Items.OfType<DirectoryInfoViewModel>().ToList();
+        //        var files = Items.OfType<FileInfoViewModel>().ToList();
+
+        //        var comparer = new FileSystemInfoComparer(options.SortBy, options.Direction);
+
+        //        directories.Sort(comparer);
+        //        files.Sort(comparer);
+
+        //        App.Current.Dispatcher.Invoke(() =>
+        //        {
+        //            Items.Clear();
+        //            foreach (var dir in directories)
+        //            {
+        //                Items.Add(dir);
+        //            }
+
+        //            foreach (var file in files)
+        //            {
+        //                Items.Add(file);
+        //            }
+        //        });
+
+        //        Debug.WriteLine($"Sorting directory on thread {Thread.CurrentThread.ManagedThreadId}");
+
+        //        var tasks = directories.Select(dir =>
+        //        {
+        //            return Task.Run(async () =>
+        //            {
+        //                Debug.WriteLine($"Starting sort of {dir.Model.FullName} on thread {Thread.CurrentThread.ManagedThreadId}");
+        //                await dir.SortAsync(options);
+        //                Debug.WriteLine($"Finished sort of {dir.Model.FullName} on thread {Thread.CurrentThread.ManagedThreadId}");
+        //            });
+        //        }).ToArray();
+
+        //        Task.WaitAll(tasks);
+        //    });
+
+        //    StatusMessage = $"Sorted by {options.SortBy} {options.Direction}";
+        //    await Task.Delay(1000);
+        //    NotifyPropertyChanged(nameof(StatusMessage));
+        //}
+
         public async Task SortAsync(SortOptions options)
         {
             _sortOptions = options;
             StatusMessage = "Sorting directory...";
-            await Task.Delay(1000);
             NotifyPropertyChanged(nameof(StatusMessage));
+            await Task.Delay(300);
+
+            var threadIds = new ConcurrentBag<int>();
 
             await Task.Run(() =>
             {
@@ -246,25 +300,36 @@ namespace PT_LAB
                     }
                 });
 
-                Debug.WriteLine($"Sorting directory on thread {Thread.CurrentThread.ManagedThreadId}");
+                threadIds.Add(Thread.CurrentThread.ManagedThreadId);
 
                 var tasks = directories.Select(dir =>
                 {
-                    return Task.Run(async () =>
+                    return Task.Factory.StartNew(async () =>
                     {
-                        Debug.WriteLine($"Starting sort of {dir.Model.FullName} on thread {Thread.CurrentThread.ManagedThreadId}");
+                        StatusMessage = $"Sorting {dir.Model.FullName}...";
+                        NotifyPropertyChanged(nameof(StatusMessage));
+                        await Task.Delay(300);
+
+                        threadIds.Add(Thread.CurrentThread.ManagedThreadId);
                         await dir.SortAsync(options);
-                        Debug.WriteLine($"Finished sort of {dir.Model.FullName} on thread {Thread.CurrentThread.ManagedThreadId}");
-                    });
+                        StatusMessage = $"Sorted {dir.Model.FullName}";
+                        NotifyPropertyChanged(nameof(StatusMessage));
+                        await Task.Delay(300);
+
+                    }, TaskCreationOptions.PreferFairness).Unwrap();
                 }).ToArray();
 
                 Task.WaitAll(tasks);
             });
 
             StatusMessage = $"Sorted by {options.SortBy} {options.Direction}";
-            await Task.Delay(1000);
             NotifyPropertyChanged(nameof(StatusMessage));
+            await Task.Delay(300);
+
+            var uniqueThreadIds = threadIds.Distinct().Count();
+            Debug.WriteLine($"Number of threads: {uniqueThreadIds}");
         }
+
         public Exception Exception { get; private set; }
     }
 
