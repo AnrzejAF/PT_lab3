@@ -139,7 +139,7 @@ namespace PT_LAB
                 _cancellationTokenSource = new CancellationTokenSource();
                 StatusMessage = "Sorting directory...";
                 NotifyPropertyChanged(nameof(StatusMessage));
-                await Task.Delay(10);
+                await Task.Delay(200);
 
                 try
                 {

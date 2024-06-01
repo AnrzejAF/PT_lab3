@@ -4,21 +4,23 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.ComponentModel.Design.Serialization;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Shapes;
 
 namespace PT_LAB
 {
     public class DirectoryInfoViewModel : FileSystemInfoViewModel
     {
         private DispatchedObservableCollection<FileSystemInfoViewModel> _items;
+        private bool _isLoaded = false;
+        private FileSystemWatcher _watcher;
+        private SortOptions _sortOptions;
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         public DispatchedObservableCollection<FileSystemInfoViewModel> Items
         {
@@ -33,16 +35,10 @@ namespace PT_LAB
             }
         }
 
-
-        private FileSystemWatcher Watcher;
-        private SortOptions _sortOptions;
-        private CancellationToken _cancellationToken = new CancellationToken();
-
         public DirectoryInfoViewModel(ViewModelBase owner) : base(owner)
         {
             Items = new DispatchedObservableCollection<FileSystemInfoViewModel>();
             Items.CollectionChanged += Items_CollectionChanged;
-
         }
 
         private void Items_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -71,54 +67,94 @@ namespace PT_LAB
                 this.StatusMessage = viewModel.StatusMessage;
             }
         }
+
+        public async Task LoadChildrenAsync()
+        {
+            if (_isLoaded)
+                return;
+
+            _isLoaded = true;
+
+            try
+            {
+                if (Model == null)
+                {
+                    StatusMessage = "Error: Model is not set.";
+                    NotifyPropertyChanged(nameof(StatusMessage));
+                    return;
+                }
+
+                StatusMessage = $"Loading directory: {Model.FullName}";
+                NotifyPropertyChanged(nameof(StatusMessage));
+
+                var directories = await Task.Run(() => Directory.GetDirectories(Model.FullName));
+                var files = await Task.Run(() => Directory.GetFiles(Model.FullName));
+
+                foreach (var dir in directories)
+                {
+                    var dirInfo = new DirectoryInfo(dir);
+                    var itemViewModel = new DirectoryInfoViewModel(this) { Model = dirInfo };
+                    App.Current.Dispatcher.Invoke(() => Items.Add(itemViewModel));
+                    await itemViewModel.LoadChildrenAsync();
+                }
+
+                foreach (var file in files)
+                {
+                    var fileInfo = new FileInfo(file);
+                    var itemViewModel = new FileInfoViewModel(this) { Model = fileInfo };
+                    App.Current.Dispatcher.Invoke(() => Items.Add(itemViewModel));
+                }
+
+                StatusMessage = $"Loaded directory: {Model.FullName}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error loading directory: {ex.Message}";
+            }
+            finally
+            {
+                NotifyPropertyChanged(nameof(StatusMessage));
+            }
+        }
+
         public async Task<bool> Open(string path, SortOptions sortOptions = null)
         {
             bool result = false;
 
             try
             {
+                if (string.IsNullOrEmpty(path))
+                {
+                    StatusMessage = "Error: Path is not provided.";
+                    NotifyPropertyChanged(nameof(StatusMessage));
+                    return false;
+                }
+
+                Model = new DirectoryInfo(path);
+
                 StatusMessage = "Loading directory:";
                 NotifyPropertyChanged(nameof(StatusMessage));
 
-                Watcher = new FileSystemWatcher(path);
-
-                Watcher.Created += OnFileSystemChanged;
-                Watcher.Renamed += OnFileSystemChanged;
-                Watcher.Deleted += OnFileSystemChanged;
-                Watcher.Changed += OnFileSystemChanged;
-                Watcher.Error += Watcher_Error;
-                Watcher.EnableRaisingEvents = true;
-
-                foreach (var dirName in Directory.GetDirectories(path))
+                _watcher = new FileSystemWatcher(path)
                 {
-                    var dirInfo = new DirectoryInfo(dirName);
-                    var itemViewModel = new DirectoryInfoViewModel(this)
-                    {
-                        Model = dirInfo
-                    };
-                    Items.Add(itemViewModel);
+                    EnableRaisingEvents = true
+                };
+                _watcher.Created += OnFileSystemChanged;
+                _watcher.Renamed += OnFileSystemChanged;
+                _watcher.Deleted += OnFileSystemChanged;
+                _watcher.Changed += OnFileSystemChanged;
+                _watcher.Error += Watcher_Error;
 
-                    itemViewModel.Open(dirName, sortOptions);
-                }
-
-                foreach (var fileName in Directory.GetFiles(path))
-                {
-                    var fileInfo = new FileInfo(fileName);
-                    var itemViewModel = new FileInfoViewModel(this)
-                    {
-                        Model = fileInfo
-                    };
-                    Items.Add(itemViewModel);
-                }
+                await LoadChildrenAsync();
 
                 if (sortOptions != null)
                 {
                     _sortOptions = sortOptions;
-                    Task task = SortAsync(_sortOptions, _cancellationToken);
+                    await SortAsync(_sortOptions, _cancellationTokenSource.Token);
                 }
+
                 StatusMessage = "Directory loaded";
                 NotifyPropertyChanged(nameof(StatusMessage));
-                await Task.Delay(500);
                 result = true;
             }
             catch (Exception ex)
@@ -126,8 +162,6 @@ namespace PT_LAB
                 Exception = ex;
                 StatusMessage = "Error loading directory";
                 NotifyPropertyChanged(nameof(StatusMessage));
-                await Task.Delay(500);
-
             }
 
             return result;
@@ -138,15 +172,13 @@ namespace PT_LAB
             Exception = e.GetException();
         }
 
-        public void OnFileSystemChanged(object sender, FileSystemEventArgs e)
+        private async void OnFileSystemChanged(object sender, FileSystemEventArgs e)
         {
-            StatusMessage = $"File system changed: {e.ChangeType} {e.FullPath}";
-            NotifyPropertyChanged(nameof(StatusMessage));
-            Task.Delay(500);
-            App.Current.Dispatcher.Invoke(() => OnFileSystemChanged(e));
+            await Task.Delay(500);
+            await App.Current.Dispatcher.InvokeAsync(async () => await OnFileSystemChangedAsync(e));
         }
 
-        private async void OnFileSystemChanged(FileSystemEventArgs e)
+        private async Task OnFileSystemChangedAsync(FileSystemEventArgs e)
         {
             switch (e.ChangeType)
             {
@@ -158,7 +190,7 @@ namespace PT_LAB
                         {
                             Model = fileInfo
                         };
-                        Items.Add(itemViewModel);
+                        App.Current.Dispatcher.Invoke(() => Items.Add(itemViewModel));
                     }
                     else if (Directory.Exists(e.FullPath))
                     {
@@ -167,19 +199,16 @@ namespace PT_LAB
                         {
                             Model = dirInfo
                         };
-                        Items.Add(itemViewModel);
-                        itemViewModel.Open(e.FullPath, _sortOptions);
+                        App.Current.Dispatcher.Invoke(() => Items.Add(itemViewModel));
+                        await itemViewModel.LoadChildrenAsync();
                     }
                     break;
                 case WatcherChangeTypes.Deleted:
                     var deletedItem = Items.FirstOrDefault(item => item.Model.FullName == e.FullPath);
                     if (deletedItem != null)
                     {
-                        Items.Remove(deletedItem);
+                        App.Current.Dispatcher.Invoke(() => Items.Remove(deletedItem));
                     }
-                    break;
-                case WatcherChangeTypes.Changed:
-                    // Optional: Handle changes if needed
                     break;
                 case WatcherChangeTypes.Renamed:
                     var renamedEventArgs = e as RenamedEventArgs;
@@ -188,7 +217,7 @@ namespace PT_LAB
                         var oldItem = Items.FirstOrDefault(item => item.Model.FullName == renamedEventArgs.OldFullPath);
                         if (oldItem != null)
                         {
-                            Items.Remove(oldItem);
+                            App.Current.Dispatcher.Invoke(() => Items.Remove(oldItem));
                         }
 
                         if (File.Exists(renamedEventArgs.FullPath))
@@ -198,7 +227,7 @@ namespace PT_LAB
                             {
                                 Model = fileInfo
                             };
-                            Items.Add(itemViewModel);
+                            App.Current.Dispatcher.Invoke(() => Items.Add(itemViewModel));
                         }
                         else if (Directory.Exists(renamedEventArgs.FullPath))
                         {
@@ -207,14 +236,14 @@ namespace PT_LAB
                             {
                                 Model = dirInfo
                             };
-                            Items.Add(itemViewModel);
-                            itemViewModel.Open(renamedEventArgs.FullPath, _sortOptions);
+                            App.Current.Dispatcher.Invoke(() => Items.Add(itemViewModel));
+                            await itemViewModel.LoadChildrenAsync();
                         }
                     }
                     break;
             }
 
-            SortAsync(_sortOptions, _cancellationToken);
+            await SortAsync(_sortOptions, _cancellationTokenSource.Token);
         }
 
         public async Task SortAsync(SortOptions options, CancellationToken cancellationToken)
@@ -222,82 +251,75 @@ namespace PT_LAB
             _sortOptions = options;
             StatusMessage = "Sorting directory...";
             NotifyPropertyChanged(nameof(StatusMessage));
-            await Task.Delay(300);
 
             var threadIds = new ConcurrentBag<int>();
 
-            await Task.Run(() =>
+            try
             {
-                var directories = Items.OfType<DirectoryInfoViewModel>().ToList();
-                var files = Items.OfType<FileInfoViewModel>().ToList();
-
-                var comparer = new FileSystemInfoComparer(options.SortBy, options.Direction);
-
-                directories.Sort(comparer);
-                files.Sort(comparer);
-
-                App.Current.Dispatcher.Invoke(() =>
+                await Task.Run(async () =>
                 {
-                    Items.Clear();
-                    foreach (var dir in directories)
-                    {
-                        Items.Add(dir);
-                    }
+                    var directories = Items.OfType<DirectoryInfoViewModel>().ToList();
+                    var files = Items.OfType<FileInfoViewModel>().ToList();
 
-                    foreach (var file in files)
-                    {
-                        Items.Add(file);
-                    }
-                });
+                    var comparer = new FileSystemInfoComparer(options.SortBy, options.Direction);
 
-                threadIds.Add(Thread.CurrentThread.ManagedThreadId);
+                    directories.Sort(comparer);
+                    files.Sort(comparer);
 
-                var tasks = directories.Select(dir =>
-                {
-                    return Task.Factory.StartNew(async () =>
+                    await App.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        if (cancellationToken.IsCancellationRequested)
+                        Items.Clear();
+                        foreach (var dir in directories)
                         {
-                            Debug.WriteLine("Cancellation requested.");
-                            return;
+                            Items.Add(dir);
                         }
 
-                        StatusMessage = $"Sorting {dir.Model.FullName}...";
-                        NotifyPropertyChanged(nameof(StatusMessage));
-                        await Task.Delay(30);
-                        
-                        threadIds.Add(Thread.CurrentThread.ManagedThreadId);
-                        await dir.SortAsync(options, cancellationToken);
+                        foreach (var file in files)
+                        {
+                            Items.Add(file);
+                        }
+                    });
 
-                        StatusMessage = $"Sorted {dir.Model.FullName}";
-                        NotifyPropertyChanged(nameof(StatusMessage));
-                        await Task.Delay(30);
-                    }, TaskCreationOptions.LongRunning).Unwrap();
-                }).ToArray();
+                    var tasks = directories.Select(dir =>
+                    {
+                        return Task.Factory.StartNew(async () =>
+                        {
+                            if (cancellationToken.IsCancellationRequested)
+                            {
+                                return;
+                            }
+                            await dir.SortAsync(options, cancellationToken);
+                        }, TaskCreationOptions.LongRunning).Unwrap();
+                    }).ToArray();
 
-                Task.WaitAll(tasks);
-            }, cancellationToken);
+                    await Task.WhenAll(tasks);
+                }, cancellationToken);
 
-            if (cancellationToken.IsCancellationRequested)
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    StatusMessage = "Sorting cancelled.";
+                }
+                else
+                {
+                    StatusMessage = $"Sorted by {options.SortBy} {options.Direction}";
+                }
+            }
+            catch (OperationCanceledException)
             {
                 StatusMessage = "Sorting cancelled.";
-                NotifyPropertyChanged(nameof(StatusMessage));
-                await Task.Delay(30);
             }
-            else
+            finally
             {
-                StatusMessage = $"Sorted by {options.SortBy} {options.Direction}";
                 NotifyPropertyChanged(nameof(StatusMessage));
-                await Task.Delay(30);
             }
-            NotifyPropertyChanged(nameof(StatusMessage));
-
-            var uniqueThreadIds = threadIds.Distinct().Count();
-            Debug.WriteLine($"Number of unique threads used: {uniqueThreadIds}");
         }
 
+        public void CancelSort()
+        {
+            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource = new CancellationTokenSource(); // Reset the token source for future use
+        }
 
         public Exception Exception { get; private set; }
     }
-
 }
