@@ -222,79 +222,70 @@ namespace PT_LAB
             _sortOptions = options;
             StatusMessage = "Sorting directory...";
             NotifyPropertyChanged(nameof(StatusMessage));
-            await Task.Delay(300);
 
             var threadIds = new ConcurrentBag<int>();
 
-            await Task.Run(() =>
+            try
             {
-                var directories = Items.OfType<DirectoryInfoViewModel>().ToList();
-                var files = Items.OfType<FileInfoViewModel>().ToList();
-
-                var comparer = new FileSystemInfoComparer(options.SortBy, options.Direction);
-
-                directories.Sort(comparer);
-                files.Sort(comparer);
-
-                App.Current.Dispatcher.Invoke(() =>
+                await Task.Run(async () =>
                 {
-                    Items.Clear();
-                    foreach (var dir in directories)
-                    {
-                        Items.Add(dir);
-                    }
+                    var directories = Items.OfType<DirectoryInfoViewModel>().ToList();
+                    var files = Items.OfType<FileInfoViewModel>().ToList();
 
-                    foreach (var file in files)
-                    {
-                        Items.Add(file);
-                    }
-                });
+                    var comparer = new FileSystemInfoComparer(options.SortBy, options.Direction);
 
-                threadIds.Add(Thread.CurrentThread.ManagedThreadId);
+                    directories.Sort(comparer);
+                    files.Sort(comparer);
 
-                var tasks = directories.Select(dir =>
-                {
-                    return Task.Factory.StartNew(async () =>
+                    App.Current.Dispatcher.Invoke(() =>
                     {
-                        if (cancellationToken.IsCancellationRequested)
+                        Items.Clear();
+                        foreach (var dir in directories)
                         {
-                            Debug.WriteLine("Cancellation requested.");
-                            return;
+                            Items.Add(dir);
                         }
 
-                        StatusMessage = $"Sorting {dir.Model.FullName}...";
-                        NotifyPropertyChanged(nameof(StatusMessage));
-                        await Task.Delay(30);
-                        
-                        threadIds.Add(Thread.CurrentThread.ManagedThreadId);
-                        await dir.SortAsync(options, cancellationToken);
+                        foreach (var file in files)
+                        {
+                            Items.Add(file);
+                        }
+                    });
 
-                        StatusMessage = $"Sorted {dir.Model.FullName}";
-                        NotifyPropertyChanged(nameof(StatusMessage));
-                        await Task.Delay(30);
-                    }, TaskCreationOptions.LongRunning).Unwrap();
-                }).ToArray();
+                    threadIds.Add(Thread.CurrentThread.ManagedThreadId);
 
-                Task.WaitAll(tasks);
-            }, cancellationToken);
+                    var tasks = directories.Select(dir =>
+                    {
+                        return Task.Factory.StartNew(async () =>
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
 
-            if (cancellationToken.IsCancellationRequested)
+                            StatusMessage = $"Sorting {dir.Model.FullName}...";
+                            NotifyPropertyChanged(nameof(StatusMessage));
+
+                            threadIds.Add(Thread.CurrentThread.ManagedThreadId);
+                            await dir.SortAsync(options, cancellationToken);
+
+                            StatusMessage = $"Sorted {dir.Model.FullName}";
+                            NotifyPropertyChanged(nameof(StatusMessage));
+                        }, cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default).Unwrap();
+                    }).ToArray();
+
+                    await Task.WhenAll(tasks);
+                }, cancellationToken);
+            }
+            catch (OperationCanceledException)
             {
                 StatusMessage = "Sorting cancelled.";
                 NotifyPropertyChanged(nameof(StatusMessage));
-                await Task.Delay(30);
             }
-            else
+            finally
             {
-                StatusMessage = $"Sorted by {options.SortBy} {options.Direction}";
+                var uniqueThreadIds = threadIds.Distinct().Count();
+                Debug.WriteLine($"Number of unique threads used: {uniqueThreadIds}");
                 NotifyPropertyChanged(nameof(StatusMessage));
-                await Task.Delay(30);
             }
-            NotifyPropertyChanged(nameof(StatusMessage));
-
-            var uniqueThreadIds = threadIds.Distinct().Count();
-            Debug.WriteLine($"Number of unique threads used: {uniqueThreadIds}");
         }
+
 
 
         public Exception Exception { get; private set; }
